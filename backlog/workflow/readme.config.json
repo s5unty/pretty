@@ -1,0 +1,7 @@
+{
+  "upstream": "https://github.com/pifydev/pretty",
+  "version": "0.12.0",
+  "commit": "00d5c350b02681b5c91c243ddbf79d15c8184840",
+  "backlogDirectory": "backlog",
+  "doneStatuses": ["Done"]
+}

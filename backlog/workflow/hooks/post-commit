@@ -1,0 +1,15 @@
+#!/bin/sh
+# pretty-readme-hook: generated README only; never stage, commit or push.
+root=$(git rev-parse --show-toplevel) || exit 1
+cd "$root" || exit 1
+# Older branches/clones without this feature should keep committing normally.
+git cat-file -e HEAD:backlog/workflow/readme.config.json 2>/dev/null || exit 0
+log=$(git rev-parse --git-path pretty-readme-hook.log) || exit 1
+output=$(node backlog/workflow/readme.ts --hook 2>&1)
+status=$?
+printf '%s\n' "$output" > "$log"
+if [ "$status" -ne 0 ]; then
+  printf '[pretty README] Generation failed; commit already succeeded. See %s\n%s\n' "$log" "$output" >&2
+  exit "$status"
+fi
+if [ -n "$output" ]; then printf '%s\n' "$output"; fi

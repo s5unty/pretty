@@ -1,0 +1,19 @@
+{
+  "name": "pretty-personal-workflow",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "generate": "node readme.ts --write",
+    "check": "node readme.ts --check",
+    "accept": "node readme.ts --accept",
+    "hooks:install": "node install-hooks.ts",
+    "test": "node --test readme.check.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "yaml": "2.9.1"
+  }
+}
