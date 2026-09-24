@@ -1,11 +1,11 @@
 ---
 id: BP-2
 title: 将 README 改为由 Backlog 自动同步的上游变更首页
-status: Done
+status: In Progress
 assignee:
   - '@pi'
 created_date: '2026-09-24 03:08'
-updated_date: '2026-09-24 05:42'
+updated_date: '2026-09-24 06:04'
 labels:
   - documentation
   - automation
@@ -34,32 +34,33 @@ ordinal: 2000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-本仓库是上游 pifydev/pretty 的个人派生项目。现有 README 仍是上游官方产品说明，无法清楚表达本项目相对上游的实际改动和后续计划。用户希望以 Backlog 为事实来源，将根 README 变为派生项目首页，并在 Backlog 更新后自动同步，不再每次手动整理或执行导出命令。
+本仓库是上游 pifydev/pretty 的个人派生项目。根 README 应展示个人相对上游已完成的变更，由 Backlog 作为记录来源自动同步，避免每次手工整理。
 
-首页至少展示上游基线版本与提交、已完成变更、计划/进行中的变更；每项变更带可点击的 Backlog 任务编号，并选择性展示验收、优先级、依赖等有价值信息。自动化应说明本地更新与远端首页生效的边界，不能把计划当作已完成改动。
+最新展示约定：保留可追溯的上游基线；仅在“变更概览”中，以无序列表展示已完成任务的编号（链接）、任务名、任务类型。不展示进行中/计划任务，不保留“已完成的变更”“正在进行”“准备做的变更”独立章节。详细计划、验收证据和实施过程留在任务页。
+
+个人工作流集中于 backlog/workflow，说明放入 AGENTS.md，不改产品依赖、CI、构建和发布；自动化仍为提交后仅生成本地 README，不自动提交/推送。
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 README 清楚标明派生项目身份、上游仓库、可追溯的基线版本/提交，并保留上游使用文档的可访问入口。
-- [x] #2 已完成与计划/进行中的变更分区展示，每项包含任务编号及指向仓库内对应 Backlog 任务的有效 Markdown 链接。
-- [x] #3 首页展示有价值的任务摘要与进展信息，缺失字段有明确降级，不把未完成任务描述为已交付变更。
-- [x] #4 Backlog 内容更新后按约定机制自动同步 README，无需逐次手动执行生成命令；触发时机、一次性配置及本地/远端边界有文档说明。
-- [x] #5 生成过程确定性、幂等，避免更新循环；不会覆盖 Backlog 源数据或无关用户修改，失败可见。
-- [x] #6 自动化测试覆盖生成内容、任务链接、状态分类、幂等和实际自动触发；项目测试与类型检查通过。
-- [x] #7 个人工作流的脚本、配置、钩子、依赖与专用检查集中到 backlog/workflow；根目录仅保留必要 README 与现有 AGENTS.md 说明，不新增 scripts、docs、.githooks 或工作流配置。
-- [x] #8 恢复产品 .github/workflows/ci.yml、package.json、bun.lock、tsconfig.json，个人工作流不改变产品依赖、CI 或发布行为。
+- [ ] #1 README 标明派生项目身份、上游仓库及基线版本/提交，保留上游使用说明入口。
+- [ ] #2 变更概览仅用无序列表展示已完成任务，每项只有任务编号（有效链接）、任务名和任务类型；类型缺失时使用未分类。
+- [ ] #3 不展示进行中/计划/其它未完成任务及其统计，不再生成已完成的变更、正在进行、准备做的变更独立章节；任务详情保留在任务页。
+- [ ] #4 Backlog 成功提交后按约定机制自动生成 README，触发时机、一次性配置、本地/远端边界有说明。
+- [ ] #5 生成确定性、幂等，不产生提交循环，不覆盖 Backlog 或无关用户修改，失败可诊断。
+- [ ] #6 测试覆盖已完成列表、链接、类型降级、未完成任务排除、幂等及实际自动触发，检查与类型检查通过。
+- [ ] #7 个人工作流脚本、配置、钩子、依赖与专用检查集中在 backlog/workflow，说明合并现有 AGENTS.md。
+- [ ] #8 产品 CI、package.json、bun.lock、tsconfig.json 无工作流改动。
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-按用户新要求收敛 BP-2（尚未提交的实现）：
-1. 将个人工作流脚本、配置、钩子与专用检查迁入 backlog/workflow，YAML 解析依赖放入独立 private npm 包；不改变产品依赖和构建。
-2. 精确撤回本任务对根 package.json、bun.lock、tsconfig.json 与产品 CI 的修改。
-3. 使用说明与工作流/产品变更隔离原则写入现有 AGENTS.md，删除独立 readme-workflow.md，更新 README 指向和安装命令。
-4. 安全迁移用户已经安装的钩子路径；保留原有修改保护、HEAD 快照与仅生成不提交语义。
-5. 分别运行产品测试/类型检查和 backlog/workflow 专用检查，真实 Git/Backlog 链路复验，确认产品配置无差异后完成验收。
+本轮调整（保留已完成的工作流隔离与安装）：
+1. 将生成器改为仅筛选完成状态，在变更概览生成编号链接/任务名/类型的无序列表；移除卡片摘要、计划分区与相关无用解析。
+2. 同步 README 简介、AGENTS 展示规则和完成状态配置。
+3. 更新回归检查，覆盖类型缺失、非完成状态排除、移入 completed 后链接、自动触发和修改保护。
+4. 运行独立工作流测试/类型检查，确认产品配置无差异；完成 BP-2 并重新生成 README。
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -90,10 +91,6 @@ ordinal: 2000
 - 当前仍待用户将本地 core.hooksPath 从旧 .githooks 迁移为 backlog/workflow/hooks：在沙箱外执行 node backlog/workflow/install-hooks.ts。已告知，尚未确认，因此 AC #4 和任务状态继续保持未完成/进行中。
 
 用户已在沙箱外执行新版安装器；本次读取确认 core.hooksPath=backlog/workflow/hooks，post-commit 文件具有执行权限。旧路径迁移阻塞已解除。先前 124 项产品测试、15 项工作流检查及真实 Backlog 自动提交冒烟证据仍有效；产品 CI/依赖/锁文件/构建配置再次确认无差异。工作流实现仍待首次正常提交；提交前缺少该配置的 HEAD 按设计跳过自动生成，本次初始 README 显式同步任务完成状态。
+
+用户进一步精简首页：只在变更概览展示已完成任务的无序列表（编号链接、任务名、类型），删除三处分区；本轮同时修改生成器，避免未来同步恢复旧布局。
 <!-- SECTION:NOTES:END -->
-
-## Final Summary
-
-<!-- SECTION:FINAL_SUMMARY:BEGIN -->
-实现 Backlog 驱动的个人派生项目 README：固定上游 0.12.0 / 00d5c35，展示已完成/进行中/计划变更及任务链接。个人自动化、钩子、独立依赖和检查集中在 backlog/workflow，说明合并到 AGENTS.md；不改产品 CI、依赖或构建。post-commit 仅生成本地 README，不暂存/提交/推送。124 项产品测试、15 项工作流检查及真实 Backlog 链路验证通过，钩子路径迁移已确认。首次提交工作流文件后持续自动生效。
-<!-- SECTION:FINAL_SUMMARY:END -->
