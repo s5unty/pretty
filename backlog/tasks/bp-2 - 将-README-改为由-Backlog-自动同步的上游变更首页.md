@@ -1,11 +1,11 @@
 ---
 id: BP-2
 title: 将 README 改为由 Backlog 自动同步的上游变更首页
-status: In Progress
+status: Done
 assignee:
   - '@pi'
 created_date: '2026-09-24 03:08'
-updated_date: '2026-09-24 05:39'
+updated_date: '2026-09-24 05:42'
 labels:
   - documentation
   - automation
@@ -44,7 +44,7 @@ ordinal: 2000
 - [x] #1 README 清楚标明派生项目身份、上游仓库、可追溯的基线版本/提交，并保留上游使用文档的可访问入口。
 - [x] #2 已完成与计划/进行中的变更分区展示，每项包含任务编号及指向仓库内对应 Backlog 任务的有效 Markdown 链接。
 - [x] #3 首页展示有价值的任务摘要与进展信息，缺失字段有明确降级，不把未完成任务描述为已交付变更。
-- [ ] #4 Backlog 内容更新后按约定机制自动同步 README，无需逐次手动执行生成命令；触发时机、一次性配置及本地/远端边界有文档说明。
+- [x] #4 Backlog 内容更新后按约定机制自动同步 README，无需逐次手动执行生成命令；触发时机、一次性配置及本地/远端边界有文档说明。
 - [x] #5 生成过程确定性、幂等，避免更新循环；不会覆盖 Backlog 源数据或无关用户修改，失败可见。
 - [x] #6 自动化测试覆盖生成内容、任务链接、状态分类、幂等和实际自动触发；项目测试与类型检查通过。
 - [x] #7 个人工作流的脚本、配置、钩子、依赖与专用检查集中到 backlog/workflow；根目录仅保留必要 README 与现有 AGENTS.md 说明，不新增 scripts、docs、.githooks 或工作流配置。
@@ -88,4 +88,12 @@ ordinal: 2000
 - 工作流 15 项独立检查通过（新增旧钩子迁移与拒绝覆盖第三方钩子检查）；工作流类型检查通过。产品原有 124 项 Node 测试及类型检查通过。新路径的真实 Backlog 1.52 创建/完成任务 auto_commit 冒烟通过，无额外提交，其他暂存内容不变；生成/陈旧检查及 git diff --check 通过。
 - 网络不可达导致独立包在线安装失败；本地验证复用此前已安装的相同 yaml@2.9.1 内容，依赖范围不变，隔离 package-lock 已通过 npm --package-lock-only --offline 校验。新克隆正常使用 npm --prefix backlog/workflow ci --ignore-scripts。
 - 当前仍待用户将本地 core.hooksPath 从旧 .githooks 迁移为 backlog/workflow/hooks：在沙箱外执行 node backlog/workflow/install-hooks.ts。已告知，尚未确认，因此 AC #4 和任务状态继续保持未完成/进行中。
+
+用户已在沙箱外执行新版安装器；本次读取确认 core.hooksPath=backlog/workflow/hooks，post-commit 文件具有执行权限。旧路径迁移阻塞已解除。先前 124 项产品测试、15 项工作流检查及真实 Backlog 自动提交冒烟证据仍有效；产品 CI/依赖/锁文件/构建配置再次确认无差异。工作流实现仍待首次正常提交；提交前缺少该配置的 HEAD 按设计跳过自动生成，本次初始 README 显式同步任务完成状态。
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+实现 Backlog 驱动的个人派生项目 README：固定上游 0.12.0 / 00d5c35，展示已完成/进行中/计划变更及任务链接。个人自动化、钩子、独立依赖和检查集中在 backlog/workflow，说明合并到 AGENTS.md；不改产品 CI、依赖或构建。post-commit 仅生成本地 README，不暂存/提交/推送。124 项产品测试、15 项工作流检查及真实 Backlog 链路验证通过，钩子路径迁移已确认。首次提交工作流文件后持续自动生效。
+<!-- SECTION:FINAL_SUMMARY:END -->
