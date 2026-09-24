@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@pi'
 created_date: '2026-09-24 03:08'
-updated_date: '2026-09-24 05:31'
+updated_date: '2026-09-24 05:39'
 labels:
   - documentation
   - automation
@@ -14,19 +14,18 @@ references:
   - README.md
   - backlog/config.yml
 documentation:
-  - docs/readme-workflow.md
+  - AGENTS.md
 modified_files:
   - README.md
-  - readme.config.json
-  - scripts/readme.ts
-  - scripts/install-hooks.ts
-  - .githooks/post-commit
-  - docs/readme-workflow.md
-  - test/readme.test.ts
-  - .github/workflows/ci.yml
-  - package.json
-  - bun.lock
-  - tsconfig.json
+  - AGENTS.md
+  - backlog/workflow/readme.ts
+  - backlog/workflow/install-hooks.ts
+  - backlog/workflow/readme.config.json
+  - backlog/workflow/hooks/post-commit
+  - backlog/workflow/readme.check.ts
+  - backlog/workflow/package.json
+  - backlog/workflow/package-lock.json
+  - backlog/workflow/tsconfig.json
 priority: medium
 type: feature
 ordinal: 2000
@@ -46,10 +45,10 @@ ordinal: 2000
 - [x] #2 已完成与计划/进行中的变更分区展示，每项包含任务编号及指向仓库内对应 Backlog 任务的有效 Markdown 链接。
 - [x] #3 首页展示有价值的任务摘要与进展信息，缺失字段有明确降级，不把未完成任务描述为已交付变更。
 - [ ] #4 Backlog 内容更新后按约定机制自动同步 README，无需逐次手动执行生成命令；触发时机、一次性配置及本地/远端边界有文档说明。
-- [ ] #5 生成过程确定性、幂等，避免更新循环；不会覆盖 Backlog 源数据或无关用户修改，失败可见。
-- [ ] #6 自动化测试覆盖生成内容、任务链接、状态分类、幂等和实际自动触发；项目测试与类型检查通过。
-- [ ] #7 个人工作流的脚本、配置、钩子、依赖与专用检查集中到 backlog/workflow；根目录仅保留必要 README 与现有 AGENTS.md 说明，不新增 scripts、docs、.githooks 或工作流配置。
-- [ ] #8 恢复产品 .github/workflows/ci.yml、package.json、bun.lock、tsconfig.json，个人工作流不改变产品依赖、CI 或发布行为。
+- [x] #5 生成过程确定性、幂等，避免更新循环；不会覆盖 Backlog 源数据或无关用户修改，失败可见。
+- [x] #6 自动化测试覆盖生成内容、任务链接、状态分类、幂等和实际自动触发；项目测试与类型检查通过。
+- [x] #7 个人工作流的脚本、配置、钩子、依赖与专用检查集中到 backlog/workflow；根目录仅保留必要 README 与现有 AGENTS.md 说明，不新增 scripts、docs、.githooks 或工作流配置。
+- [x] #8 恢复产品 .github/workflows/ci.yml、package.json、bun.lock、tsconfig.json，个人工作流不改变产品依赖、CI 或发布行为。
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -81,4 +80,12 @@ ordinal: 2000
 - 本仓库 hooks:install 曾因沙箱 .git/config 写入受限失败；用户已在沙箱外安装成功，已读取确认 core.hooksPath=.githooks。首次提交工作流脚本与配置前，hook 按设计跳过尚无 readme.config.json 的 HEAD；本次初始首页由显式生成完成。实现文件尚未替用户提交/推送。
 
 用户要求最小化产品目录污染：这不是产品功能变更，是个人工作流。CI freshness 门禁并非必需，应撤回；根 YAML 依赖与锁文件变更也改为工作流目录内独立依赖。说明合并进已有 AGENTS.md，不保留单独说明文档。重新打开任务并重新验收。
+
+目录与改动收敛完成：
+- 个人工作流全量移至 backlog/workflow：readme.ts、install-hooks.ts、readme.config.json、hooks/post-commit、readme.check.ts，以及独立 private 包/package-lock/tsconfig。工作流依赖 YAML 不再进入产品 package.json 或 bun.lock。专用检查命名为 .check.ts，不进入产品默认测试发现。
+- 原根 scripts/、docs/、.githooks/、readme.config.json 与新增 test/readme.test.ts 已撤去。操作说明及隔离原则合并进现有 AGENTS.md。
+- git diff --exit-code 对 .github/workflows/ci.yml、package.json、bun.lock、tsconfig.json 确认全无差异；根产品配置没有本任务残留改动。必要的工作流出口仅 README 与 AGENTS；其余全在 backlog/workflow。
+- 工作流 15 项独立检查通过（新增旧钩子迁移与拒绝覆盖第三方钩子检查）；工作流类型检查通过。产品原有 124 项 Node 测试及类型检查通过。新路径的真实 Backlog 1.52 创建/完成任务 auto_commit 冒烟通过，无额外提交，其他暂存内容不变；生成/陈旧检查及 git diff --check 通过。
+- 网络不可达导致独立包在线安装失败；本地验证复用此前已安装的相同 yaml@2.9.1 内容，依赖范围不变，隔离 package-lock 已通过 npm --package-lock-only --offline 校验。新克隆正常使用 npm --prefix backlog/workflow ci --ignore-scripts。
+- 当前仍待用户将本地 core.hooksPath 从旧 .githooks 迁移为 backlog/workflow/hooks：在沙箱外执行 node backlog/workflow/install-hooks.ts。已告知，尚未确认，因此 AC #4 和任务状态继续保持未完成/进行中。
 <!-- SECTION:NOTES:END -->
