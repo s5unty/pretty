@@ -436,6 +436,7 @@ export default function pretty(pi: ExtensionAPI) {
         };
       case "edit":
         return {
+          renderShell: "default",
           renderCall: (args: { path?: string }, theme: ThemeLike, context?: RenderCtx) => {
             const summary = editCall(theme, args ?? {}, clipWidth());
             const pv = editPreview(theme, args ?? {}, context);

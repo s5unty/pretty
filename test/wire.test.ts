@@ -172,6 +172,36 @@ test("f093: /pretty off bash re-registers a pristine bash mid-session when prett
   });
 });
 
+test("edit uses the default colored shell like write", async () => {
+  await withTmp(async (cwd) => {
+    const env = makeEnv(cwd, () => BUILTIN_BASH);
+    await env.sessionStart();
+    assert.equal(env.tools.get("edit")!.renderShell, "default");
+    assert.equal(env.tools.get("edit")!.renderShell, env.tools.get("write")!.renderShell ?? "default");
+  });
+});
+
+test("edit shell override follows pretty toggles without changing execution", async () => {
+  await withTmp(async (cwd) => {
+    const env = makeEnv(cwd, () => BUILTIN_BASH);
+    await env.sessionStart();
+    const enabled = env.tools.get("edit")!;
+
+    await env.runCommand("off edit");
+    const disabled = env.tools.get("edit")!;
+    assert.equal(disabled.renderShell, "self", "restore Pi's native edit shell on opt-out");
+    assert.notEqual(disabled.renderCall, enabled.renderCall);
+    assert.notEqual(disabled.renderResult, enabled.renderResult);
+    for (const key of ["execute", "parameters", "prepareArguments", "promptSnippet", "promptGuidelines"]) {
+      assert.equal(disabled[key], enabled[key], `${key} must remain untouched`);
+    }
+
+    await env.runCommand("on edit");
+    assert.equal(env.tools.get("edit")!.renderShell, "default");
+    assert.equal(env.tools.get("edit")!.execute, enabled.execute);
+  });
+});
+
 test("f094: /pretty status reports MCP rendering unavailable on a pi without getToolDefinition", async () => {
   await withTmp(async (cwd) => {
     const env = makeEnv(cwd, () => BUILTIN_BASH);
