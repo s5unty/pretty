@@ -1,9 +1,11 @@
 ---
 id: BP-2
 title: 将 README 改为由 Backlog 自动同步的上游变更首页
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@pi'
 created_date: '2026-09-24 03:08'
+updated_date: '2026-09-24 03:08'
 labels:
   - documentation
   - automation
@@ -33,3 +35,9 @@ ordinal: 2000
 - [ ] #5 生成过程确定性、幂等，避免更新循环；不会覆盖 Backlog 源数据或无关用户修改，失败可见。
 - [ ] #6 自动化测试覆盖生成内容、任务链接、状态分类、幂等和实际自动触发；项目测试与类型检查通过。
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+开始调研自动化触发机制与现有上游基线。候选基线来自本地历史：00d5c350b02681b5c91c243ddbf79d15c8184840，package.json 版本 0.12.0；尚需确定自动同步时机与部署方式。
+<!-- SECTION:NOTES:END -->
