@@ -16,6 +16,7 @@ Backlog 是本项目的任务与变更记录来源。下面的托管区块由脚
 
 - [BP-1](backlog/tasks/bp-1%20-%20%E4%BF%AE%E5%A4%8D-edit-%E5%B7%A5%E5%85%B7%E7%BC%BA%E5%B0%91%E8%89%B2%E5%9D%97%E8%83%8C%E6%99%AF.md) · 修复 edit 工具缺少色块背景 · bug
 - [BP-2](backlog/tasks/bp-2%20-%20%E5%B0%86-README-%E6%94%B9%E4%B8%BA%E7%94%B1-Backlog-%E8%87%AA%E5%8A%A8%E5%90%8C%E6%AD%A5%E7%9A%84%E4%B8%8A%E6%B8%B8%E5%8F%98%E6%9B%B4%E9%A6%96%E9%A1%B5.md) · 将 README 改为由 Backlog 自动同步的上游变更首页 · feature
+- [BP-3](backlog/tasks/bp-3%20-%20%E5%90%8C%E6%AD%A5%E4%B8%8A%E6%B8%B8%E8%87%B3-v0.13.0%EF%BC%88%E8%A1%A5%E5%BD%95%EF%BC%89.md) · 同步上游至 v0.13.0（补录） · chore
 
 ## Backlog 文档与决策
 
