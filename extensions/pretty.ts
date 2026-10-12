@@ -1,8 +1,10 @@
 /**
  * @pify/pretty — compact, theme-aware rendering for pi's built-in tools.
  *
- * Pure rendering: every tool is re-registered with its ORIGINAL execute
- * delegated untouched (pi's official built-in-tool-renderer pattern); only
+ * Pure rendering. On pi >= 1.0.1 the renderers are chosen through
+ * pi.registerToolRenderer(), which never touches the tool registry; on older
+ * pi every tool is re-registered with its ORIGINAL execute delegated untouched
+ * (pi's built-in-tool-renderer pattern). Either way only
  * renderCall/renderResult change. Collapsed one-line summaries expand with
  * pi's standard toggle; read results get syntax highlighting via pi's own
  * highlightCode; edit diffs are colorized with +N −M stats. Each renderer
@@ -41,6 +43,7 @@ import {
 } from "../src/config.ts";
 import { colorizeDiff, diffStats, statsLabel, type DiffRenderOptions } from "../src/diff.ts";
 import { genericArgPreview, humanizeToolName, isMcpTool } from "../src/generic.ts";
+import { resolveRenderers } from "../src/resolver.ts";
 import { unifiedDiff } from "../src/linediff.ts";
 import {
   getEditReplacements,
@@ -141,7 +144,46 @@ export default function pretty(pi: ExtensionAPI) {
   }
   let originals: Record<PrettyTool, AnyTool> | null = null;
 
-  // ── bash ownership ───────────────────────────────────────────────────
+  // ── Rendering without re-registration (pi >= 1.0.1) ──────────────────
+  //
+  // pi 1.0.1 added pi.registerToolRenderer(): a resolver that chooses how
+  // calls to any tool are drawn, without re-registering the tool. Everything
+  // below that re-registers a built-in — buildOriginals, applyTool, the bash
+  // ownership dance, wrapGenericTools — exists only because older pi had no
+  // other way to attach a renderer. Under the resolver pretty never touches
+  // the tool registry: nothing the model is told can change, a bash another
+  // extension owns (shell-background's) keeps its execute and gets pretty's
+  // drawing, and MCP tools draw compactly whether or not their server has
+  // connected yet. The resolver reads `config` and `settings` at draw time,
+  // so a /pretty toggle needs no re-registration, only a repaint. The legacy
+  // path stays, untouched, for pi < 1.0.1.
+  type Resolver = (toolName: string, next: () => Record<string, unknown> | undefined) => Record<string, unknown> | undefined;
+  const liveRenderers =
+    typeof (pi as unknown as { registerToolRenderer?: unknown }).registerToolRenderer === "function";
+  if (liveRenderers) {
+    (pi as unknown as { registerToolRenderer: (resolver: Resolver) => void }).registerToolRenderer((toolName, next) =>
+      resolveRenderers({
+        toolName,
+        disabled: config.disabled,
+        mcpTools: settings.mcpTools,
+        next,
+        builtin: renderersFor,
+        generic: genericToolRenderers,
+      }),
+    );
+  }
+
+  /** Nudge pi to redraw the tool rows: re-assert the current expand state. */
+  function repaint(ctx: ExtensionContext): void {
+    if (!ctx.hasUI) return;
+    try {
+      ctx.ui.setToolsExpanded(ctx.ui.getToolsExpanded());
+    } catch {
+      // best-effort; the next render picks up the new config anyway
+    }
+  }
+
+  // ── bash ownership (legacy path; under the resolver only the label matters) ──
   //
   // bash is the one built-in another package legitimately owns —
   // @pify/shell-background registers an async bash (background:true, 30s
@@ -216,15 +258,14 @@ export default function pretty(pi: ExtensionAPI) {
    * bash is pi's builtin (or absent), claim it per the current config.
    */
   function resolveBash(): void {
-    if (bashResolved || !originals) return;
+    if (bashResolved || (!liveRenderers && !originals)) return;
     bashResolved = true;
     const info = bashSourceInfo();
-    if (info && info.source !== "builtin" && info.source !== "") {
-      bashForeign = ownerLabel(info); // another extension owns bash — hands off
-      return;
-    }
-    bashForeign = null;
-    applyBash();
+    // Another extension owns bash: on the legacy path hands off; under the
+    // resolver there is nothing to claim, pretty draws bash whoever owns it,
+    // and the owner is only named in /pretty status.
+    bashForeign = info && info.source !== "builtin" && info.source !== "" ? ownerLabel(info) : null;
+    if (bashForeign === null) applyBash();
   }
 
   function isFailed(result: unknown): boolean {
@@ -664,15 +705,17 @@ export default function pretty(pi: ExtensionAPI) {
   // ── Lifecycle ────────────────────────────────────────────────────────
 
   pi.on("session_start", async (_event, ctx) => {
-    originals = buildOriginals(ctx.cwd);
+    // Under the resolver nothing is re-registered, so there are no originals.
+    originals = liveRenderers ? null : buildOriginals(ctx.cwd);
     loadSettings(ctx.cwd);
     config = replayBranch(ctx.sessionManager.getBranch() as never);
     // A fresh session re-decides bash ownership in before_agent_start.
     bashResolved = false;
     bashForeign = null;
-    mcpUnavailable = typeof (pi as unknown as { getToolDefinition?: unknown }).getToolDefinition !== "function";
+    mcpUnavailable =
+      !liveRenderers && typeof (pi as unknown as { getToolDefinition?: unknown }).getToolDefinition !== "function";
     applyAll();
-    wrapGenericTools();
+    if (!liveRenderers) wrapGenericTools();
     if (settingsWarnings.length > 0 && ctx.hasUI) {
       ctx.ui.notify(`pretty settings: ${settingsWarnings.join("; ")}`, "warning");
     }
@@ -692,7 +735,7 @@ export default function pretty(pi: ExtensionAPI) {
   // re-scan for MCP tools that register only once their server connects.
   pi.on("before_agent_start", async () => {
     resolveBash();
-    wrapGenericTools();
+    if (!liveRenderers) wrapGenericTools();
   });
 
   // ── Command ──────────────────────────────────────────────────────────
@@ -708,9 +751,14 @@ export default function pretty(pi: ExtensionAPI) {
       if (command.kind === "status") {
         if (ctx.hasUI) {
           const lines = ["Pretty renderers", ...statusLines(config)];
+          if (liveRenderers) lines.push("Drawing through pi's tool-renderer resolver (no tool is re-registered)");
           // Coexistence: name the extension that owns bash, if it isn't pretty.
           if (bashForeign !== null) {
-            lines.push(`bash: rendered by ${bashForeign}; pretty's bash renderers are off`);
+            lines.push(
+              liveRenderers
+                ? `bash: owned by ${bashForeign}; pretty draws it, its execute untouched`
+                : `bash: rendered by ${bashForeign}; pretty's bash renderers are off`,
+            );
           }
           // Honesty: MCP rendering can't work without a tool-definition accessor.
           if (mcpUnavailable && settings.mcpTools) {
@@ -729,7 +777,8 @@ export default function pretty(pi: ExtensionAPI) {
       const { config: next, changed } = applyCommand(config, command);
       config = next;
       pi.appendEntry(PRETTY_CONFIG, config);
-      for (const tool of changed) applyTool(tool);
+      if (liveRenderers) repaint(ctx);
+      else for (const tool of changed) applyTool(tool);
       if (!ctx.hasUI) return;
       ctx.ui.notify(
         changed.length === 0
@@ -739,7 +788,7 @@ export default function pretty(pi: ExtensionAPI) {
                 const state = config.disabled.includes(t) ? "off" : "on";
                 // A bash toggle can't change rendering while another extension
                 // owns bash — say so instead of a misleading bare "on"/"off".
-                if (t === "bash" && bashForeign !== null) {
+                if (t === "bash" && bashForeign !== null && !liveRenderers) {
                   return `pretty bash: ${state} — bash is rendered by ${bashForeign}; pretty leaves it untouched (nothing changes until that extension is removed and you /reload)`;
                 }
                 return `pretty ${t}: ${state}`;

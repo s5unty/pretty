@@ -8,9 +8,9 @@ Backlog 是本项目的任务与变更记录来源。下面的托管区块由脚
 ## 上游基线
 
 - 上游：[pifydev/pretty](https://github.com/pifydev/pretty)
-- 基线版本：**0.12.0**（该提交的 package.json 版本，不假定存在同名 tag）
-- 基线提交：[00d5c35](https://github.com/pifydev/pretty/commit/00d5c350b02681b5c91c243ddbf79d15c8184840)
-- [上游使用说明（基线版本）](https://github.com/pifydev/pretty/blob/00d5c350b02681b5c91c243ddbf79d15c8184840/README.md)
+- 基线版本：**0.13.0**（该提交的 package.json 版本，不假定存在同名 tag）
+- 基线提交：[851d337](https://github.com/pifydev/pretty/commit/851d3376d39a6c2cefbfc668add501a6789e0152)
+- [上游使用说明（基线版本）](https://github.com/pifydev/pretty/blob/851d3376d39a6c2cefbfc668add501a6789e0152/README.md)
 
 ## 变更概览
 

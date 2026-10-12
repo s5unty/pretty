@@ -49,3 +49,18 @@ test("tidyPreview collapses blank runs and trailing whitespace, never content", 
   assert.equal(tidyPreview("a\n\nb"), "a\n\nb"); // two blanks preserved
   assert.equal(tidyPreview("keep\nevery\nword"), "keep\nevery\nword");
 });
+
+test("bidi overrides are dropped so a filename cannot reorder the row", () => {
+  // "harmless.txt" written so the row would render reversed after the RLO.
+  assert.equal(sanitizeOutput("src/\u202Etxt.sselmrah"), "src/txt.sselmrah");
+  assert.equal(sanitizeOutput("a\u200Fb\u2066c\u2069d\u061Ce"), "abcde");
+});
+
+test("an unterminated OSC loses only its introducer; the payload stays as text", () => {
+  // No BEL/ST ever comes: the old regex needed one and let the raw ESC through.
+  const out = sanitizeOutput("\x1b]0;evil title\nnext line");
+  assert.ok(!out.includes("\x1b"), "no raw ESC survives");
+  assert.equal(out, "0;evil title\nnext line");
+  // A terminated OSC is still removed whole, and SGR still kept.
+  assert.equal(sanitizeOutput("\x1b]0;t\x07\x1b[32mok\x1b[0m"), "\x1b[32mok\x1b[0m");
+});

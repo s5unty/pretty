@@ -26,9 +26,18 @@ const OSC = new RegExp(`${ESC}\\][\\s\\S]*?(?:\\x07|${ESC}\\\\)`, "g");
 // Any CSI sequence: ESC [ params intermediates final. Kept only when final is 'm'.
 const CSI = new RegExp(`${ESC}\\[[0-9;?]*[ -/]*([@-~])`, "g");
 // A single-char escape (ESC c, ESC ( B, ST, …): ESC plus one following byte
-// that is NOT the CSI '[' or OSC ']' intro — those, when they survive to here,
-// are the ESC of a kept SGR sequence and must be left alone.
-const LONE_ESC = new RegExp(`${ESC}[^\\[\\]]`, "g");
+// that is NOT the CSI '[' intro — that one, when it survives to here, is the
+// ESC of a kept SGR sequence and must be left alone. An OSC intro `ESC ]`
+// that survives is by definition UNTERMINATED (every terminated OSC was
+// removed above): dropping just the introducer keeps the payload as text —
+// scanning on to end-of-string instead would hand a one-character primitive
+// that erases the rest of the output (fail open, as a footer sanitizer must).
+const LONE_ESC = new RegExp(`${ESC}[^\\[]`, "g");
+// Unicode bidi overrides and isolates (ALM, LRM/RLM, LRE/RLE/PDF/LRO/RLO,
+// LRI/RLI/FSI/PDI): printable code points the control strip never sees, and
+// one RLO in a filename or a grep match reorders the whole collapsed row.
+// Dropped, not substituted, so widths stay honest.
+const BIDI = /[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/g;
 // C0/C1 control chars except tab (\x09), newline (\x0a), and ESC (\x1b) —
 // ESC is excluded because a kept SGR sequence legitimately begins with it.
 // eslint-disable-next-line no-control-regex
@@ -44,7 +53,8 @@ export function sanitizeOutput(text: string): string {
     .replace(OSC, "")
     .replace(CSI, (seq, final: string) => (final === "m" ? seq : ""))
     .replace(LONE_ESC, "")
-    .replace(CONTROL, "");
+    .replace(CONTROL, "")
+    .replace(BIDI, "");
 }
 
 /**
